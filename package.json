@@ -25,6 +25,7 @@
     "test:lib": "mocha test/unit/lib",
     "test:unit": "mocha test/unit",
     "test": "npm run test:lib && npm run test:unit",
+    "watch": "http-server . -p 7800",
     "docsify": "docsify serve docs"
   },
   "repository": {
