@@ -15,8 +15,7 @@ When Datepicker object is attached to a block element, it's configured as an inl
 ![](./images/datepicker-inline.jpg)
 
 - The picker element is embedded to the block element. (always shown)
-- Initial selection can be set in the `data-date` attribute
-- Inline picker does not support operation by keyboard.
+- Initial selection can be set in the `data-date` attribute.
 
 ##### Date range picker
 
@@ -80,7 +79,7 @@ The view to select a decade.
 
 When [`maxNumberOfDates`](options?id=maxnumberofdates) config option is set to other than `1`, date picker turns to the multdate mode.
 
-In this mode, the day cells in the days view act as toggle switch of the date's select status. The order of selection is kept; newly selected date is appended to the existing selection and the oldest item in the selection drops if the number of selected dates exceeds the option's value.  
+In this mode, the day cells in the days view act as toggle switch of the date's select state. The order of selection is kept; newly selected date is appended to the existing selection, and the oldest item in the selection drops if the number of selected dates exceeds the option's value.  
 In the input field, selected dates are joined with the delimiter string set in the [`dateDelimiter`](options?id=dateDelimiter) config option.
 
 ![](./images/multidate.jpg)
@@ -116,41 +115,58 @@ You can operate date picker using keyboard. Here are the available keyboard oper
 
 **When picker is hidden**
 
-- <KBD>**↓**</KBD> (arrowDown)**,** <kbd>**Esc**</kbd> **:**  
-  Show the picker
-- <kbd>**Enter**</kbd> **:**  
-  Update the picker with the input field's value
+- <KBD>**↓**</KBD> (ArrowDown)<sup>(\*)</sup> / <kbd>**Esc**</kbd> <sup>(\*)</sup>**:**<br>
+  — Show the picker
+- <kbd>**Enter**</kbd> **:**<br>
+  — Update the picker with the input field's value
 
 **When picker is shown**
 
-- <kbd>**Esc**</kbd> **:**  
-  Hide the picker
-- <kbd>**←**</kbd> (arrowLeft)**,** <kbd>**→**</kbd> (arrowRight) **:**  
-  Move focused date/month/year/decade 1 step horizontally
-- <kbd>**↑**</kbd> (arrowUp)**,** <kbd>**↓**</kbd> (arrowDown) **:**  
-  Move focused date/month/year/decade 1 step vertically
-- <kbd>**Ctrl**</kbd> (or <kbd>Meta</kbd>) **+** <kbd>**←**</kbd> (arrowLeft) **:**  
-  Move to previous month/year/decade/century _(Shortcut of the "Prev" button)_
-- <kbd>**Ctrl**</kbd> (or <kbd>Meta</kbd>) **+** <kbd>**→**</kbd> (arrowRight) **:**  
-  Move to next month/year/decade/century _(Shortcut of the "Next" button)_
-- <kbd>**Ctrl**</kbd> (or <kbd>Meta</kbd>) **+** <kbd>**↑**</kbd> (arrowUp) **:**    
-  Change the view upward _(Shortcut of the view switch)_
+- <kbd>**Esc**</kbd> <sup>(\*)</sup>**:**<br>
+  — Hide the picker
+- <kbd>**←**</kbd> (ArrowLeft) / <kbd>**→**</kbd> (ArrowRight) **:**<br>
+  — Move focused date/month/year/decade 1 step horizontally
+- <kbd>**↑**</kbd> (ArrowUp) / <kbd>**↓**</kbd> (ArrowDown) **:**<br>
+  — Move focused date/month/year/decade 1 step vertically
+- <kbd>**Ctrl**</kbd> (or <kbd>Meta</kbd>) **+** <kbd>**←**</kbd> (ArrowLeft)<sup>(\*)</sup>**:**<br>
+  — Move to previous month/year/decade/century _(Shortcut of the "Prev" button)_
+- <kbd>**Ctrl**</kbd> (or <kbd>Meta</kbd>) **+** <kbd>**→**</kbd> (ArrowRight)<sup>(\*)</sup>**:**<br>
+  — Move to next month/year/decade/century _(Shortcut of the "Next" button)_
+- <kbd>**Ctrl**</kbd> (or <kbd>Meta</kbd>) **+** <kbd>**↑**</kbd> (ArrowUp)<sup>(\*)</sup>**:**<br>
+  — Change the view upward _(Shortcut of the view switch)_
 - <kbd>**Enter**</kbd> **:**
   - *when days view is shown:*  
-    Select the focused date 
+    — Select the focused date 
   - *otherwise:*  
-    Change the view downward for the focused decade/year/month 
-- <kbd>**Backspace**</kbd>**,** <kbd>**Delete**</kbd>**, any printable character,** <kbd>**Shift**</kbd> **+ either of arrow keys** ( <kbd>←</kbd>/<kbd>→</kbd>/<kbd>↑</kbd>/<kbd>↓</kbd> ) **:**  
-  Enter [edit mode](overview?id=edit-mode)
+    — Change the view downward for the focused decade/year/month 
+- <kbd>**Backspace**</kbd> / <kbd>**Delete**</kbd> / **any printable character** (without <kbd>Ctrl</kbd>/<kbd>Meta</kbd> ) /<br>
+  **any of modifier key(s)** ( <kbd>Ctrl</kbd>/<kbd>Meta</kbd>/<kbd>Alt</kbd>/<kbd>Shift</kbd> ) **+ arrow key** ( <kbd>←</kbd>/<kbd>→</kbd>/<kbd>↑</kbd>/<kbd>↓</kbd> ) **combinations**<sup>(\*\*)</sup> **:**<br>
+  — Enter [edit mode](overview?id=edit-mode)
+
+If the Today button is enabled
+- <kbd>**Ctrl**</kbd> (or <kbd>Meta</kbd>) **+** <kbd>**.**</kbd><sup>(\*\*\*) (\*)</sup> **:**<br>
+  — Go to (or select) the current date _(Shortcut of the Today button)_<br>
+
+If the Clear button is enabled
+- <kbd>**Ctrl**</kbd> (or <kbd>Meta</kbd>) **+** <kbd>**Backspace**</kbd> <sup>(\*)</sup> **:**<br>
+  — Clear current selection _(Shortcut of the Clear button)_
 
 **When in [edit mode](overview?id=edit-mode)**
 
-- <kbd>**Esc**</kbd> **:**  
-  Hide the picker exiting edit mode
-- <kbd>**Enter**</kbd> **:**   
-  Exit edit mode updating the picker with the change on the input field
+- <kbd>**Esc**</kbd> <sup>(\*)</sup>**:**<br>
+  — Hide the picker (As a side effect, exit edit mode as well)
+- <kbd>**Enter**</kbd> **:**<br>
+  — Exit edit mode updating the picker with the change on the input field
+- <kbd>**Ctrl**</kbd> (or <kbd>Meta</kbd>) **+** <kbd>**↓**</kbd> (ArrowDown)<sup>(\*)</sup>**:**<br>
+  — Exit edit mode without hiding or updating the picker
 
-> Note: Keyboard operation is not supported by inline picker.
+> &ensp;&ensp;<sup>\*</sup> These keys are defined as shourcut key, and can be changed/disabled with the [shortcutKeys](options?id=shortcutKeys) option.<br>
+> &ensp;<sup>\*\*</sup> By default, <kbd>Ctrl</kbd>/<kbd>Meta</kbd> + <kbd>←</kbd>, <kbd>Ctrl</kbd>/<kbd>Meta</kbd> + <kbd>→</kbd>, and <kbd>Ctrl</kbd>/<kbd>Meta</kbd> + <kbd>↑</kbd> are not included in this because they are assigned as deault shortcut keys for Prev/Next buttons and view switch, and start functioning as this if unassigned from shortcut key with [shortcutKeys](options?id=shortcutKeys).<br>
+> <sup>\*\*\*</sup> To be accurate, the key or key conbination for <kbd>.</kbd> (e.g. <kbd>.</kbd> key on QWERTY keyboard, <kbd>Shift</kbd> + <kbd>;</kbd> on AZERTY keyboard)
+>
+> Note: On inline picker...
+> - keyboard operation works when the associated block element has `tabindex` attribute.
+> - operations related to picker's visibility and edit mode are not available.
 
 ## Edit Mode 
 
@@ -160,12 +176,14 @@ To solve this, Datepicker has the edit mode.
 Date picker automatically enters edit mode when:
 
 - the `<input>` element is clicked
-- <kbd>Backspace</kbd>, <kbd>Delete</kbd> or any of printable character key is pressed (without control/meta key).
-- <kbd>Shift</kbd> + either of arrow keys ( <kbd>←</kbd>/<kbd>→</kbd>/<kbd>↑</kbd>/<kbd>↓</kbd> ) is pressed (without control/meta key).
+- <kbd>Backspace</kbd> key, <kbd>Delete</kbd> key, or any of printable character (without control/meta)  key is pressed.
+- any of modifire key(s) ( <kbd>Ctrl</kbd>/<kbd>Meta</kbd>/<kbd>Alt</kbd>/<kbd>Shift</kbd> ) + either of arrow keys ( <kbd>←</kbd>/<kbd>→</kbd>/<kbd>↑</kbd>/<kbd>↓</kbd> ) are pressed.<br>
+  _(except control/meta + arrow-Left/Right/Up by default, as they are assigned to other shortcut keys)_
 
 and exits edit mode when:
 
-- <kbd>Enter</kbd> key or <kbd>Esc</kbd> key is pressed
+- <kbd>Enter</kbd> key is pressed
+- <kbd>Ctrl</kbd>/<kbd>Meta</kbd> + <kbd>↓</kbd> (ArrowDown) keys are pressed _(custominzable through [shortcutKeys](options?id=shortcutKeys))_
 - the picker element becomes hidden
 
 While date picker is in edit mode,

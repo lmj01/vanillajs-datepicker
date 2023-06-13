@@ -16,11 +16,11 @@ The package also includes pre-built js/css files for those who like to use it di
 - Dependency free
 - Made for modern browsers — no support for IE and Edge Legacy (aka non-Chromium Edge)  
   _** If you need to support Edge Legacy, [Web Components polyfill](https://www.npmjs.com/package/@webcomponents/webcomponentsjs) will allow this library to run on it._
-- Lightweight (well, relatively…) — 34kB (minified, uncompressed)
+- Lightweight (well, relatively…) — 35kB (minified, uncompressed, 11kB when gzipped)
 
 ##### Demo
 
-[Live Online Demo](https://raw.githack.com/mymth/vanillajs-datepicker/v1.2.0/demo/)
+[Live Online Demo](https://raw.githack.com/mymth/vanillajs-datepicker/v1.3.3/demo/)
 
 ## Quick Start
 
@@ -46,13 +46,13 @@ npm install --save-dev vanillajs-datepicker
 import Datepicker from 'path/to/node_modules/vanillajs-datepicker/js/Datepicker.js';
 ```
 
-_Or if you use a bundler that supports [pkg.module](https://github.com/rollup/rollup/wiki/pkg.module) (e.g. [Rollup](https://rollupjs.org/) with [node-resolve](https://github.com/rollup/plugins/tree/master/packages/node-resolve) plugin, [webpack](https://webpack.js.org/))_
+_Or if you use a bundler that supports [pkg.module](https://github.com/rollup/rollup/wiki/pkg.module)_
 
 ```javascript
 import { Datepicker } from 'vanillajs-datepicker';
 ```
 
-_Or if your bundler supports [package entry points](https://nodejs.org/api/packages.html#packages_package_entry_points) (e.g. Rollup with node-resolve plugin v8.4+, webpack v5+), you can also do this._
+_Or if your bundler supports [package.json "exports" field](https://nodejs.org/api/packages.html#packages_package_entry_points), you can also do this._
 
 ```javascript
 import Datepicker from 'vanillajs-datepicker/Datepicker';
@@ -69,6 +69,11 @@ const datepicker = new Datepicker(elem, {
 
 ![](./images/datepicker.jpg)
 
+> The created Datepicker instance can be accessed through the associated input element as well.
+> 
+> ```javascript
+> const datepicker = document.querySelector('input[name="foo"]').datepicker;
+> ```
 
 – **Inline picker**
 
@@ -92,6 +97,11 @@ const datepicker = new Datepicker(elem, {
 
 ![](./images/datepicker-inline.jpg)
 
+> The created Datepicker instance can be accessed through the associated block element as well.
+>
+> ```javascript
+> const datepicker = document.getElementById('foo').datepicker;
+> ```
 
 ##### Date range picker
 
@@ -111,13 +121,13 @@ const datepicker = new Datepicker(elem, {
 import DateRangePicker from 'path/to/node_modules/vanillajs-datepicker/js/DateRangePicker.js';
 ```
 
-_Or if you use a bundler that supports [pkg.module](https://github.com/rollup/rollup/wiki/pkg.module) (e.g. [Rollup](https://rollupjs.org/) with [node-resolve](https://github.com/rollup/plugins/tree/master/packages/node-resolve) plugin, [webpack](https://webpack.js.org/))_
+_Or if you use a bundler that supports [pkg.module](https://github.com/rollup/rollup/wiki/pkg.module)_
 
 ```javascript
 import { DateRangePicker } from 'vanillajs-datepicker';
 ```
 
-_Or if your bundler supports [package entry points](https://nodejs.org/api/packages.html#packages_package_entry_points) (e.g. Rollup with node-resolve plugin v8.4+, webpack v5+), you can also do this._
+_Or if your bundler supports [package.json "exports" field](https://nodejs.org/api/packages.html#packages_package_entry_points), you can also do this._
 
 ```javascript
 import DateRangePicker from 'vanillajs-datepicker/DateRangePicker';
@@ -134,12 +144,26 @@ const rangepicker = new DateRangePicker(elem, {
 
 ![](./images/rangepicker.jpg)
 
+> The created DateRangePicker instance can be accessed through the associated block element as well.
+>
+> ```javascript
+> const rangepicker = document.getElementById('foo').rangepicker;
+> ```
+
 ##### Stylesheet
 
 1. import scss file.
 
 ```scss
 @import 'path/to/node_modules/vanillajs-datepicker/sass/datepicker';
+```
+
+_The path to node_modules can be omitted if your bundler can resolve node_modules path or you configure Sass with the "[loadPaths](https://sass-lang.com/documentation/js-api/interfaces/Options#loadPaths)" option (for legacy options, "[includePaths](https://sass-lang.com/documentation/js-api/interfaces/LegacySharedOptions#includePaths)")_
+
+_Alternatively, if your bundler can load stylesheet exported with [package.json "exports" field](https://nodejs.org/api/packages.html#packages_package_entry_points), you can import precompiled css file to your js file._
+
+```javascript
+import 'vanillajs-datepicker/css/datepicker.css';
 ```
 
 ### Using with CSS framework
@@ -150,6 +174,12 @@ const rangepicker = new DateRangePicker(elem, {
 
 ```scss
 @import 'path/to/node_modules/vanillajs-datepicker/sass/datepicker-bulma';
+```
+
+_To import precompiled css file to your js file_
+
+```javascript
+import 'vanillajs-datepicker/css/datepicker-bulma.css';
 ```
 
 #### Bootstrap
@@ -174,12 +204,26 @@ _Or if your Bootstrap's version is v4.x_
 @import 'path/to/node_modules/vanillajs-datepicker/sass/datepicker-bs4';
 ```
 
+_To import precompiled css file to your js file_
+
+```javascript
+import 'vanillajs-datepicker/css/datepicker-bs5.css';
+// ...or, for v4.x
+import 'vanillajs-datepicker/css/datepicker-bs4.css';
+```
+
 #### Foundation
 
 1. import scss file for Foundation instead.
 
 ```scss
 @import 'path/to/node_modules/vanillajs-datepicker/sass/datepicker-foundation';
+```
+
+_To import precompiled css file to your js file_
+
+```javascript
+import 'vanillajs-datepicker/css/datepicker-foundation.css';
 ```
 
 #### Other frameworks
@@ -239,29 +283,29 @@ const datepicker = new Datepicker(elem, {
 1. From CDN, load css and js files.
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.2.0/dist/css/datepicker.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.3/dist/css/datepicker.min.css">
 
 ...
 
-<script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.2.0/dist/js/datepicker-full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.3/dist/js/datepicker-full.min.js"></script>
 ```
 
 _If you use Bulma, Bootstrap (v5, v4) or Foundation, you can use the css for your framework instead._
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.2.0/dist/css/datepicker-bulma.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.3/dist/css/datepicker-bulma.min.css">
 <!-- or -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.2.0/dist/css/datepicker-bs5.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.3/dist/css/datepicker-bs5.min.css">
 <!-- or -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.2.0/dist/css/datepicker-bs4.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.3/dist/css/datepicker-bs4.min.css">
 <!-- or -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.2.0/dist/css/datepicker-foundation.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.3/dist/css/datepicker-foundation.min.css">
 ```
 
-_And if don't need date range, you can use the datepicker-only version of js file._
+_And if you don't need date range, you can use the datepicker-only version of js file._
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.2.0/dist/js/datepicker.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.3/dist/js/datepicker.min.js"></script>
 ```
 
 2. Call `Datepicker`/`DateRangePicker` constructor in the same way as explained [above](?id=quick-start). (The classes are exposed to global scope.)

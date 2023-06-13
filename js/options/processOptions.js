@@ -1,5 +1,11 @@
-import {hasProperty, pushUnique} from '../lib/utils.js';
-import {dateValue, regularizeDate} from '../lib/date.js';
+import {pushUnique} from '../lib/utils.js';
+import {
+  dateValue,
+  regularizeDate,
+  getIsoWeek,
+  getWesternTradWeek,
+  getMidEasternWeek,
+} from '../lib/date.js';
 import {reFormatTokens, parseDate} from '../lib/date-format.js';
 import {parseHTML} from '../lib/dom.js';
 import defaultOptions from './defaultOptions.js';
@@ -17,8 +23,27 @@ function sanitizeDOW(dow, day) {
     : dow;
 }
 
-function calcEndOfWeek(startOfWeek) {
-  return (startOfWeek + 6) % 7;
+function determineGetWeekMethod(numberingMode, weekStart) {
+  const methodId = numberingMode === 4
+    ? (weekStart === 6 ? 3 : !weekStart + 1)
+    : numberingMode;
+  switch (methodId) {
+    case 1:
+      return getIsoWeek;
+    case 2:
+      return getWesternTradWeek;
+    case 3:
+      return getMidEasternWeek;
+  }
+}
+
+function updateWeekStart(newValue, config, weekNumbers) {
+  config.weekStart = newValue;
+  config.weekEnd = (newValue + 6) % 7;
+  if (weekNumbers === 4) {
+    config.getWeekNumber = determineGetWeekMethod(4, newValue);
+  }
+  return newValue;
 }
 
 // validate input date. if invalid, fallback to the original value
@@ -33,15 +58,24 @@ function validateViewId(value, origValue, max = 3) {
   return viewId >= 0 && viewId <= max ? viewId : origValue;
 }
 
+function replaceOptions(options, from, to, convert = undefined) {
+  if (from in options) {
+    if (!(to in options)) {
+      options[to] = convert ? convert(options[from]) : options[from];
+    }
+    delete options[from];
+  }
+}
+
 // Create Datepicker configuration to set
 export default function processOptions(options, datepicker) {
   const inOpts = Object.assign({}, options);
   const config = {};
   const locales = datepicker.constructor.locales;
-  const rangeSideIndex = datepicker.rangeSideIndex;
+  const rangeEnd = !!datepicker.rangeSideIndex;
   let {
+    datesDisabled,
     format,
-    getCalendarWeek,
     language,
     locale,
     maxDate,
@@ -49,8 +83,15 @@ export default function processOptions(options, datepicker) {
     minDate,
     pickLevel,
     startView,
+    weekNumbers,
     weekStart,
   } = datepicker.config || {};
+
+  // for backword compatibility
+  replaceOptions(inOpts, 'calendarWeeks', 'weekNumbers', val => val ? 1 : 0);
+  replaceOptions(inOpts, 'clearBtn', 'clearButton');
+  replaceOptions(inOpts, 'todayBtn', 'todayButton');
+  replaceOptions(inOpts, 'todayBtnMode', 'todayButtonMode');
 
   if (inOpts.language) {
     let lang;
@@ -61,7 +102,7 @@ export default function processOptions(options, datepicker) {
         // Check if langauge + region tag can fallback to the one without
         // region (e.g. fr-CA → fr)
         lang = inOpts.language.split('-')[0];
-        if (locales[lang] === undefined) {
+        if (!locales[lang]) {
           lang = false;
         }
       }
@@ -87,8 +128,7 @@ export default function processOptions(options, datepicker) {
         format = config.format = locale.format;
       }
       if (weekStart === origLocale.weekStart) {
-        weekStart = config.weekStart = locale.weekStart;
-        config.weekEnd = calcEndOfWeek(locale.weekStart);
+        weekStart = updateWeekStart(locale.weekStart, config, weekNumbers);
       }
     }
   }
@@ -105,23 +145,23 @@ export default function processOptions(options, datepicker) {
 
   //*** pick level ***//
   let newPickLevel = pickLevel;
-  if (inOpts.pickLevel !== undefined) {
-    newPickLevel = validateViewId(inOpts.pickLevel, 2);
+  if ('pickLevel' in inOpts) {
+    newPickLevel = validateViewId(inOpts.pickLevel, pickLevel, 2);
     delete inOpts.pickLevel;
   }
   if (newPickLevel !== pickLevel) {
     if (newPickLevel > pickLevel) {
       // complement current minDate/madDate so that the existing range will be
       // expanded to fit the new level later
-      if (inOpts.minDate === undefined) {
+      if (!('minDate' in inOpts)) {
         inOpts.minDate = minDate;
       }
-      if (inOpts.maxDate === undefined) {
+      if (!('maxDate' in inOpts)) {
         inOpts.maxDate = maxDate;
       }
     }
     // complement datesDisabled so that it will be reset later
-    if (!inOpts.datesDisabled) {
+    if (datesDisabled && !inOpts.datesDisabled) {
       inOpts.datesDisabled = [];
     }
     pickLevel = config.pickLevel = newPickLevel;
@@ -133,7 +173,7 @@ export default function processOptions(options, datepicker) {
   // because null is treated as 0 (= unix epoch) when comparing with time value
   let minDt = minDate;
   let maxDt = maxDate;
-  if (inOpts.minDate !== undefined) {
+  if ('minDate' in inOpts) {
     const defaultMinDt = dateValue(0, 0, 1);
     minDt = inOpts.minDate === null
       ? defaultMinDt  // set 0000-01-01 to prevent negative values for year
@@ -143,7 +183,7 @@ export default function processOptions(options, datepicker) {
     }
     delete inOpts.minDate;
   }
-  if (inOpts.maxDate !== undefined) {
+  if ('maxDate' in inOpts) {
     maxDt = inOpts.maxDate === null
       ? undefined
       : validateDate(inOpts.maxDate, format, locale, maxDt);
@@ -165,15 +205,26 @@ export default function processOptions(options, datepicker) {
   }
 
   if (inOpts.datesDisabled) {
-    config.datesDisabled = inOpts.datesDisabled.reduce((dates, dt) => {
-      const date = parseDate(dt, format, locale);
-      return date !== undefined
-        ? pushUnique(dates, regularizeDate(date, pickLevel, rangeSideIndex))
-        : dates;
-    }, []);
+    const dtsDisabled = inOpts.datesDisabled;
+    if (typeof dtsDisabled === 'function') {
+      config.datesDisabled = null;
+      config.checkDisabled = (timeValue, viewId) => dtsDisabled(
+        new Date(timeValue),
+        viewId,
+        rangeEnd
+      );
+    } else {
+      const disabled = config.datesDisabled = dtsDisabled.reduce((dates, dt) => {
+        const date = parseDate(dt, format, locale);
+        return date !== undefined
+          ? pushUnique(dates, regularizeDate(date, pickLevel, rangeEnd))
+          : dates;
+      }, []);
+      config.checkDisabled = timeValue => disabled.includes(timeValue);
+    }
     delete inOpts.datesDisabled;
   }
-  if (inOpts.defaultViewDate !== undefined) {
+  if ('defaultViewDate' in inOpts) {
     const viewDate = parseDate(inOpts.defaultViewDate, format, locale);
     if (viewDate !== undefined) {
       config.defaultViewDate = viewDate;
@@ -182,11 +233,10 @@ export default function processOptions(options, datepicker) {
   }
 
   //*** days of week ***//
-  if (inOpts.weekStart !== undefined) {
+  if ('weekStart' in inOpts) {
     const wkStart = Number(inOpts.weekStart) % 7;
     if (!isNaN(wkStart)) {
-      weekStart = config.weekStart = wkStart;
-      config.weekEnd = calcEndOfWeek(wkStart);
+      weekStart = updateWeekStart(wkStart, config, weekNumbers);
     }
     delete inOpts.weekStart;
   }
@@ -199,8 +249,26 @@ export default function processOptions(options, datepicker) {
     delete inOpts.daysOfWeekHighlighted;
   }
 
+  //*** week numbers ***//
+  if ('weekNumbers' in inOpts) {
+    let method = inOpts.weekNumbers;
+    if (method) {
+      const getWeekNumber = typeof method === 'function'
+        ? (timeValue, startOfWeek) => method(new Date(timeValue), startOfWeek)
+        : determineGetWeekMethod((method = parseInt(method, 10)), weekStart);
+      if (getWeekNumber) {
+        weekNumbers = config.weekNumbers = method;
+        config.getWeekNumber = getWeekNumber;
+      }
+    } else {
+      weekNumbers = config.weekNumbers = 0;
+      config.getWeekNumber = null;
+    }
+    delete inOpts.weekNumbers;
+  }
+
   //*** multi date ***//
-  if (inOpts.maxNumberOfDates !== undefined) {
+  if ('maxNumberOfDates' in inOpts) {
     const maxNumberOfDates = parseInt(inOpts.maxNumberOfDates, 10);
     if (maxNumberOfDates >= 0) {
       config.maxNumberOfDates = maxNumberOfDates;
@@ -215,7 +283,7 @@ export default function processOptions(options, datepicker) {
 
   //*** view ***//
   let newMaxView = maxView;
-  if (inOpts.maxView !== undefined) {
+  if ('maxView' in inOpts) {
     newMaxView = validateViewId(inOpts.maxView, maxView);
     delete inOpts.maxView;
   }
@@ -226,7 +294,7 @@ export default function processOptions(options, datepicker) {
   }
 
   let newStartView = startView;
-  if (inOpts.startView !== undefined) {
+  if ('startView' in inOpts) {
     newStartView = validateViewId(inOpts.startView, newStartView);
     delete inOpts.startView;
   }
@@ -257,7 +325,7 @@ export default function processOptions(options, datepicker) {
   }
 
   //*** misc ***//
-  if (inOpts.disableTouchKeyboard !== undefined) {
+  if ('disableTouchKeyboard' in inOpts) {
     config.disableTouchKeyboard = 'ontouchstart' in document && !!inOpts.disableTouchKeyboard;
     delete inOpts.disableTouchKeyboard;
   }
@@ -269,26 +337,19 @@ export default function processOptions(options, datepicker) {
     };
     delete inOpts.orientation;
   }
-  if (inOpts.todayBtnMode !== undefined) {
-    switch(inOpts.todayBtnMode) {
+  if ('todayButtonMode' in inOpts) {
+    switch(inOpts.todayButtonMode) {
       case 0:
       case 1:
-        config.todayBtnMode = inOpts.todayBtnMode;
+        config.todayButtonMode = inOpts.todayButtonMode;
     }
-    delete inOpts.todayBtnMode;
+    delete inOpts.todayButtonMode;
   }
 
-  config.getCalendarWeek =
-    typeof inOpts.getCalendarWeek === 'function'
-      ? inOpts.getCalendarWeek
-      : getCalendarWeek || null;
-
-  delete inOpts.getCalendarWeek;
-
   //*** copy the rest ***//
-  Object.keys(inOpts).forEach((key) => {
-    if (inOpts[key] !== undefined && hasProperty(defaultOptions, key)) {
-      config[key] = inOpts[key];
+  Object.entries(inOpts).forEach(([key, value]) => {
+    if (value !== undefined && key in defaultOptions) {
+      config[key] = value;
     }
   });
 

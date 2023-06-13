@@ -29,26 +29,25 @@ Function to customize the day cells in the days view. The function is called whe
     - `date`: {`Date`} - Date associated with the cell
   - Return:
     - {`Object`} - Things to customize. Available properties are:
-      - `enabled`: {`Boolean`} - whether the cell is selectable
+      - <span class="muted">`enabled`: {`Boolean`} - whether the cell is selectable (deprecated)</span>
       - `classes`: {`String`} - space-separated additional CSS classes for the cell element
       - `content`: {`String`} - HTML for the cell element's child nodes
     - {`String`} - additional classes — same as returning `{ classes: additionalClasses }`
-    - {`Boolean`} - whether the cell is selectable — same as returning `{ enabled: isSelectable }`
+    - <span class="muted">{`Boolean`} - whether the cell is selectable — same as returning `{ enabled: isSelectable } (deprecated)`</span>
+
+  > Support for boolean return value, `enabled` property of return object, and "disabled" class in `classes` property or return string will be removed. Use [`datesDisabled`](#datesDisabled) with callback function instead.
 
 ```javascript
 function (date) {
-    let isSelectable, additionalClasses, htmlFragment;
+    let additionalClasses, htmlFragment;
     //...your customization logic
     
     return {
-        enabled: isSelectable,
         classes: additionalClasses,
         content: htmlFragment,
     };
     // Or
     return additionalClasses;
-    // Or
-    return isSelectable;
 }
 ```
 
@@ -83,13 +82,21 @@ CSS class for `<button>` elements. (view switch, prev/next buttons, clear and to
 >
 > For constructor only. Cannot be used with `setOptions()`.  
 
-#### calendarWeeks
+#### <span class="muted">calendarWeeks (deprecated)</span>
+This option will be removed in favor of the [`weekNumbers`](#weekNumbers) option.
+
+<div class="muted">
+
 - Type: `Boolean`
 - Default: `false`
 
 Whether to show the week number ([ISO week](https://en.wikipedia.org/wiki/ISO_week_date)) on week rows.
+</div>
 
-#### clearBtn
+#### <span class="muted">clearBtn (deprecated)</span>
+Synonym of `clearButton` — this option will be removed.
+
+#### clearButton
 - Type: `Boolean`
 - Default: `false`
 
@@ -115,7 +122,7 @@ Delimiter string to separate the dates in a multi-date string.
 > The delimiter must not be included in date format string.
 
 #### datesDisabled
-- Type: `Array`
+- Type: `Array`|`Function`
 - Default: `[]`
 
 Dates to disable. Array of date strings, Date objects, time values or mix of those.
@@ -123,8 +130,38 @@ Dates to disable. Array of date strings, Date objects, time values or mix of tho
 > Multi-date string cannot be used. Use multiple single-date strings instead.  
 >
 > Given dates are processed to match the [`pickLevel`](#pickLevel) at the time.    
-> If [`pickLevel`](#pickLevel) is changed dynamically and independently, this option will be reset.  
-> This option should be changed together when changing [`pickLevel`](#pickLevel) dynamically.
+> If [`pickLevel`](#pickLevel) is changed dynamically and independently, the array will be reset to empty. Therefore, this option should be changed together when changing [`pickLevel`](#pickLevel) dynamically.
+
+Alternatively, a function that returns whether the passed date is disabled can be used.
+
+- **function**
+  - Arguments:
+    - `date`: {`Date`} - Date to examine. When the function is used...
+      - to render the picker element, the date associated with the cell to render
+      - for `setDate()`/`update()` to validate the date(s) passed/entered by the user, the given date
+    - `viewId`: {`Number`} - When the function is used...
+      - to render the picker element, the ID of the view currently rendering (`0`:_days_ – `3`:_decades_ )
+      - for `setDate()`/`update()` to validate the passed/entered date(s), [`pickLevel`](#pickLevel)
+    - `rangeEnd`: {`Boolean`} - Whether the date picker is the end-date picker of date range picker 
+  - Return:
+    - {`Boolean`} - Whether the date is disabled
+
+```javascript
+function (date, viewId, rangeEnd) {
+  let isDateDisabled;
+  // ...your evaluation logic
+  return isDateDisabled;
+}
+```
+
+> When view ID > `0`, the 1st of the month or the 1st of January of the year is passed to the `date` argument, and if the date picker is the end-date picker of a date range picker, the last day of the month or the 31st of December of the year is passed, instead. (The same rules as [`pickLevel`](#pickLevel))
+>
+> Note: because of the above, to disable the 1st of a month (the last day if `rangeEnd` is `true`), the `viewId` argument has to be evaluated along with `date`.<br>
+> (e.g. `date.getDate() == 1 && date.getMonth() == 0 && viewId == 0`)<br>
+> Otherwise, that month will be unclickable in the months view (if the month is January, so will its year in the years view).
+>
+> When a function is set, this option will not be reset by changing [`pickLevel`](#pickLevel) dynamically.  
+> The need of changing together with `pickLevel` is only applied when an array is used, but not when a function is used.
 
 #### daysOfWeekDisabled
 - Type: `Number[]`
@@ -146,19 +183,24 @@ Days of the week to highlight. `0`:_Sunday_ – `6`:_Saturday_, up to 6 items.
 
 The date to be focused when the date picker opens with no selected date(s).
 
-#### <span style="color: #999;">disableTouchKeyboard (deprecated)</span>
+#### <span class="muted">disableTouchKeyboard (deprecated)</span>
 This option will be removed. Use the attribute: `inputmode="none"` on the `<input>` element instead.
 
-<div style="color: #999;">
-<ul>
-  <li>Type: <code style="color: #999;">Boolean</code></li>
-  <li>Default: <code style="color: #999;">false</code></li>
-</ul>
+<div class="muted">
+
+- Type: `Boolean`
+- Default: `false`
 
 Whether to prevent on-screen keyboard on mobile devices from showing up when the associated input field receives focus.
 
-<blockquote style="border-left-color: #bbb;">Not available on inline picker.</blockquote>
+> Not available on inline picker.
 </div>
+
+#### enableOnReadonly
+- Type: `Boolean`
+- Default: `true`
+
+Whether to show the date picker when the associated input filed has the `readonly` attribute.
 
 #### format
 - Type: `String`|`Object`
@@ -205,14 +247,6 @@ Alternatively, object that contains custom parser and formatter functions can be
     },
 }
 ```
-
-#### getCalendarWeek
-- Type: `Function`
-- Default: `null`
-
-Allows to customize the algorithm how calendar week numbers are calculated.<br>
-The type of the `getCalendarWeek` function has to be `(date: Date, weekStart: number) => number`, where `date` is the date for which the calendar week number shall be calculated and `weekStart` is the first day of the week represented by a number between `0` and `6` (`0` means Sunday, `1` means Monday, ..., `6` means Saturday).<br>
-The return value is the calendar week number (`1` to `53`).
 
 #### language
 - Type: `String`
@@ -283,10 +317,10 @@ Space-separated string for date picker's horizontal and vertical placement to th
 
 The level that the date picker allows to pick. `0`:_date_,`1`: _month_ &nbsp;or `2`:_year_.
 
-> When this option is `1`, the selected date becomes the 1st of the month or, if the date picker is the end-date picker of date range picker, the last day of the month.  
-> When this option is `2`, the selected date becomes January 1st of the year or, if the date picker is the end-date picker of date range picker, December 31st of the year.
+> When this option is `1`, the selected date becomes the 1st of the month or, if the date picker is the end-date picker of a date range picker, the last day of the month.  
+> When this option is `2`, the selected date becomes January 1st of the year or, if the date picker is the end-date picker of a date range picker, December 31st of the year.
 >
-> Changing this option dynamically affects existing [`datesDisabled`](#datesDisabled), [`maxDate`](#maxdate) and [`minDate`](#minDate). This options should be updated together with those options when they are customized.
+> Changing this option dynamically affects existing [`datesDisabled`](#datesDisabled) (except when a function is set), [`maxDate`](#maxdate) and [`minDate`](#minDate). This option should be updated together with those options when they are customized.
 
 #### prevArrow
 - Type: `String`
@@ -295,6 +329,69 @@ The level that the date picker allows to pick. `0`:_date_,`1`: _month_ &nbsp;or 
 HTML (or plain text) for the button label of the "Prev" button.
 
 > See the note in [i18n ≻ Text Direction](i18n?id=text-direction) when using with RTL languages.
+
+#### shortcutKeys
+- Type: `Objrct`
+- Default: <span><code>{
+    show: {key: 'ArrowDown'},
+    hide: null,
+    toggle: {key: 'Escape'},
+    prevButton: {key: 'ArrowLeft', ctrlOrMetaKey: true},
+    nextButton: {key: 'ArrowRight', ctrlOrMetaKey: true},
+    viewSwitch: {key: 'ArrowUp', ctrlOrMetaKey: true},
+    clearButton: {key: 'Backspace', ctrlOrMetaKey: true},
+    todayButton: {key: '.', ctrlOrMetaKey: true},
+    exitEditMode: {key: 'ArrowDown', ctrlOrMetaKey: true},
+  }</code></span>
+
+Object to assign or unset shortcut keys, where the keys of the object are the name of actions to assign/unset shortcut key, and each value is either an object to define the key combination of the shortcut key (key definition object) or, when unsetting the default shortcut, a falsy value except `undefined`.
+
+> <kbd>Enter</kbd> and <kbd>Tab</kbd> keys cannot be used as shortcut key.
+>
+> Keys assigned to the actions function as shortcut key only under the condition the action takes effect. (e.g. show → only when the picker is hidden, clearButton → only when [`clearButton`](#clearButton) is `true`) 
+>
+> For constructor only. Cannot be used with setOptions().
+ 
+- **Actions**  
+  Available actions:
+  Name | Default shortcut key | Description
+  ---|---|---
+  `show` | <kbd>↓</kbd> _(ArrowDown)_ | Show the picker 
+  `hide` | N/A | Hide the picker 
+  `toggle` | <kbd>Esc</kbd> _(Escape)_ | Toggle the deisplay of the picker 
+  `prevButton` | <kbd>Ctrl</kbd>/<kbd>Meta</kbd> + <kbd>←</kbd> _(ArrowLeft)_ | Perform the Prev button action 
+  `nextButton` | <kbd>Ctrl</kbd>/<kbd>Meta</kbd> + <kbd>→</kbd> _(ArrowRight)_ | Perform the Next button action 
+  `viewSwitch` | <kbd>Ctrl</kbd>/<kbd>Meta</kbd> + <kbd>↑</kbd> _(ArrowUp)_ | Perform the View switch action 
+  `clearButton` | <kbd>Ctrl</kbd>/<kbd>Meta</kbd> + <kbd>Backspace</kbd> | Perform the Clear button action 
+  `todayButton` | <kbd>Ctrl</kbd>/<kbd>Meta</kbd> + <kbd>.</kbd> | Perform the Today button action 
+  `exitEditMode` | <kbd>Ctrl</kbd>/<kbd>Meta</kbd> + <kbd>↓</kbd> _(ArrowDown)_ | Exit edit mode 
+  - Unknown actions and the actions whose value is `undefined` are ignored.
+  - Actions not to change the default shortcut key can be omitted.
+
+- **key definition object**  
+  The object's keys and values are basically the properties/values to match against the [`KeyboardEvent`](https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent) object of `keydown` event.
+  Key (property) | Type | Description
+  ---|---|---
+  `key` | `String` | What the [`key`](https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key) propery's value is<br>&bull; Required
+  `ctrlOrMetaKey`  | `Boolean` | Whether the `ctrlKey` or `metaKey` property is `true`<br>&bull; Default: `false`
+  `ctrlKey` | | Alias of `ctrlOrMetaKey`
+  `metaKey` | | Alias of `ctrlOrMetaKey`
+  `altKey` | `Boolean` | Whether the `altKey` property is `true`<br>&bull; Default: `false`<br>&bull; Ignored when `key` is a printable character
+  `shiftKey` | `Boolean` | Whether the `shiftKey` property is `true`<br>&bull; Default: `false`<br>&bull; Ignored when `key` is a printable character
+  - [See a full list of key values](https://developer.mozilla.org/en-US/docs/Web/API/UI_Events/Keyboard_event_key_values) for available values for  `key`.
+  - For simplicity, <kbd>Ctrl</kbd> and <kbd>Meta</kbd> keys are not distinguished.
+  - When omitted, `ctrlOrMetaKey`, `altKey`, and `shiftKey` are complemented with `false` and  treated as a criterion for "not pressed".  
+    e.g.
+    - `{key: 'Enter'}` does not match any modifier key + <kbd>Enter</kbd>
+    - `{key: 'Enter', altKey: true}` does not match <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd>, <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Enter</kbd>
+  - If a printable character is set to `key`, `altKey` and `shiftKey` are not evaluated because when `KeyboardEvent.key` is a printable character, the key(s) the user pressed can differ depending on keyboard layout and the state of the <kbd>Shift</kbd> and <kbd>Alt</kbd> keys is reflected in `key`'s value.<br>
+    e.g.<br>
+    When a `keydown` event with `key: '#'` is triggered, the event's `altKey` and `shiftKey` properties are...
+    keyboard layout | key(s) pressed | event's properties
+    ---|---|---
+    US keyboard | <kbd>Shift</kbd> + <kbd>3</kbd> | `altKey: false`, `shftKey: true`
+    German keyboard | <kbd>#</kbd> | `altKey: false`, `shftKey: false`
+    UK Apple keyboard (on Mac) | <kbd>Option</kbd> + <kbd>3</kbd> | `altKey: true`, `shftKey: false`
 
 #### showDaysOfWeek
 - Type: `Boolean`
@@ -332,13 +429,19 @@ Title string shown in the date picker's title bar.
 
 > The title bar is not displayed if the title is empty.
 
-#### todayBtn
+#### <span class="muted">todayBtn (deprecated)</span>
+Synonym of `todayButton` – this option will be removed.
+
+#### <span class="muted">todayBtnMode (deprecated)</span>
+Synonym of `todayButtonMode` – this option will be removed.
+
+#### todayButton
 - Type: `Boolean`
 - Default: `false`
 
 Whether to show the today button.
 
-#### todayBtnMode
+#### todayButtonMode
 - Type: `Number`
 - Default: `0`
 
@@ -364,6 +467,88 @@ Whether to update the selected date(s) with the input field's value when the inp
 > When this option is `false`, if the user edits the date string in input field, it will be parsed and applied only when the user presses the <kbd>Enter</kbd> key. If the edit is left unparsed, it will be discarded when input field becomes unfocused (by <kbd>Tab</kbd> key press or click outside the picker element/input field).
 >
 > Not available on inline picker.
+
+#### weekNumbers
+- Type: `Number`|`Function`
+- Default: `0`
+
+Week numbers to display
+
+<table>
+  <tr>
+    <th>Option</th>
+    <th>Week numbers to display</th>
+    <th>Description</th>
+  </tr>
+  <tr>
+    <td><code>0</code></td>
+    <td>None</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td><code>1</code></td>
+    <td>ISO 8601</td>
+    <td>First day of week is Monday<br>
+      First week of year is the week that contains the 4th of January</td>
+  </tr>
+  <tr>
+    <td><code>2</code></td>
+    <td>Western traditional</td>
+    <td>First day of week is Sunday<br>
+      First week of year is the week that contains the 1st of January</td>
+  </tr>
+  <tr>
+    <td><code>3</code></td>
+    <td>Middle Eastern</td>
+    <td>First day of week is Saturday<br>
+      First week of year is the week that contains the 1st of January</td>
+  </tr>
+  <tr>
+    <td><code>4</code></td>
+    <td>Guess from <code>weekStart</code></td>
+    <td>
+      If the start of the week determined by the chosen <a href="#/options?id=language"><code>language</code></a>'s locale or the <a href="#/options?id=weekStart"><code>weekStart</code></a> option is:<br>
+      &bull; <code>0</code>:<em>Sunday</em>, Western traditional week numbers are shown<br>
+      &bull; <code>6</code>:<em>Saturday</em>, Middle Eastern week numbers are shown<br>
+      Otherwise, ISO 8601 week numbers are shown
+    </td>
+  </tr>
+  <tr>
+    <td>function</td>
+    <td>User-defined week numbers</td>
+    <td>
+      Week numbers calculated by the given function are shown
+      <ul>
+        <li>Function
+          <ul>
+            <li>Arguments
+              <ul>
+                <li><code>date</code> : [<code>Date</code>] - Date to calcurate the week number</li>
+                <li><code>weekStart</code> ; [<code>Number</code>] - The first day of the week<br>
+                  <em>(see <a href="#/options?id=weekStart"><code>weekStart</code></a>)</em></li>
+              </ul>
+            </li>
+            <li>Retuen
+              <ul>
+                <li>[<code>Number</code>] - The week number of the date</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ul>
+      <pre data-lang="javascript" style="margin-bottom: 0;"><code class="lang-javascript"><span class="token keyword">function</span> <span class="token punctuation">(</span><span class="token parameter">date</span>, <span class="token parameter">weekStart</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">let</span> weekNumber<span class="token punctuation">;</span>
+    <span class="token comment">//...your calculation algorithm</span>
+    <span class="token keyword">return</span> weekNumber<span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre>
+    </td>
+  </tr>
+</table>
+
+> Date picker displays the week number of the leftmost (if the direction is RTL, rightmost) date of each week. To prevent confusing week numbers from being shown, be sure to use the week numbering system whose first day of the week matches the start day of the week determined by the chosen [`language`](#language)'s locale or the [`weekStart`](#weekStart) option.
+>
+> See [https://en.wikipedia.org/wiki/Week#Numbering](https://en.wikipedia.org/wiki/Week#Numbering) for more about week numbering systems.
+
 
 #### weekStart
 - Type: `Number`

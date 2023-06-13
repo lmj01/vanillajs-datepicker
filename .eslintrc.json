@@ -36,8 +36,8 @@
         "getViewSwitch": "readonly",
         "getCells": "readonly",
         "cellInfo": "readonly",
-        "filterCells": "readonly",
         "getCellIndices": "readonly",
+        "mapIndices": "readonly",
         "datepicker": "readonly",
         "Datepicker": "readonly",
         "DateRangePicker": "readonly"
@@ -47,12 +47,12 @@
       }
     },
     {
-      "files": ["test/unit/**"],
+      "files": ["test/preconditional/**"],
       "env": {
         "node": true
       },
       "parserOptions": {
-        "ecmaVersion": 2020
+        "ecmaVersion": 2022
       },
       "globals": {
         "JSDOM": "readonly"
@@ -64,7 +64,7 @@
         "node": true
       },
       "parserOptions": {
-        "ecmaVersion": 2020
+        "ecmaVersion": 2022
       }
     },
     {

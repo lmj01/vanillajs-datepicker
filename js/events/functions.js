@@ -1,5 +1,6 @@
 import {limitToRange} from '../lib/utils.js';
-import {addMonths, addYears} from '../lib/date.js';
+import {today, addMonths, addYears} from '../lib/date.js';
+import {isActiveElement} from '../lib/dom.js';
 
 export function triggerDatepickerEvent(datepicker, type) {
   const detail = {
@@ -13,8 +14,8 @@ export function triggerDatepickerEvent(datepicker, type) {
 
 // direction: -1 (to previous), 1 (to next)
 export function goToPrevOrNext(datepicker, direction) {
-  const {minDate, maxDate} = datepicker.config;
-  const {currentView, viewDate} = datepicker.picker;
+  const {config, picker} = datepicker;
+  const {currentView, viewDate} = picker;
   let newViewDate;
   switch (currentView.id) {
     case 0:
@@ -26,8 +27,8 @@ export function goToPrevOrNext(datepicker, direction) {
     default:
       newViewDate = addYears(viewDate, direction * currentView.navStep);
   }
-  newViewDate = limitToRange(newViewDate, minDate, maxDate);
-  datepicker.picker.changeFocus(newViewDate).render();
+  newViewDate = limitToRange(newViewDate, config.minDate, config.maxDate);
+  picker.changeFocus(newViewDate).render();
 }
 
 export function switchView(datepicker) {
@@ -38,11 +39,33 @@ export function switchView(datepicker) {
   datepicker.picker.changeView(viewId + 1).render();
 }
 
-export function unfocus(datepicker) {
-  if (datepicker.config.updateOnBlur) {
-    datepicker.update({revert: true});
+export function clearSelection(datepicker) {
+  datepicker.setDate({clear: true});
+}
+
+export function goToOrSelectToday(datepicker) {
+  const currentDate = today();
+  if (datepicker.config.todayButtonMode === 1) {
+    datepicker.setDate(currentDate, {forceRefresh: true, viewDate: currentDate});
   } else {
-    datepicker.refresh('input');
+    datepicker.setFocusedDate(currentDate, true);
   }
-  datepicker.hide();
+}
+
+export function unfocus(datepicker) {
+  const onBlur = () => {
+    if (datepicker.config.updateOnBlur) {
+      datepicker.update({revert: true});
+    } else {
+      datepicker.refresh('input');
+    }
+    datepicker.hide();
+  };
+  const element = datepicker.element;
+
+  if (isActiveElement(element)) {
+    element.addEventListener('blur', onBlur, {once: true});
+  } else {
+    onBlur();
+  }
 }

@@ -1,10 +1,5 @@
 /*eslint no-unused-vars: ["error", { "varsIgnorePattern": "initialize|on[A-Z]*" }]*/
 var templates = {
-  input: `<div class="field">
-  <div class="control">
-    <input type="text" class="input date">
-  </div>
-</div>`,
   inline: `<div class="date"></div>`,
   range: `<div class="field has-addons date">
   <div class="control">
@@ -28,7 +23,7 @@ beforeShowDay(date) {
           classes: 'has-background-info'
         };
       case 8:
-        return false;
+        return {content: '🎱'};
       case 12:
         return "has-text-success";
     }
@@ -42,28 +37,69 @@ beforeShowMonth(date) {
       }
       break;
     case 8:
-      return false;
+      return 'highlighted';
   }
 },
 beforeShowYear(date) {
   switch (date.getFullYear()) {
-    case 2017:
-      return false;
     case 2020:
-      return {content: '<span class="tooltip is-tooltip-bottom" data-tooltip="Tooltip text">2020</span>'};
+      return 'is-italic is-underlined';
+    case 2025:
+      return {content: '<span class="tooltip is-tooltip-bottom" data-tooltip="Tooltip text">2025</span>'};
   }
 },
 beforeShowDecade(date) {
   switch (date.getFullYear()) {
     case 2000:
-      return false;
+      return 'has-text-weight-bold';
     case 2100:
       return {
-        content: '💯',
-        classes: 'is-background-success',
+        content: '2💯',
+        classes: 'has-background-success',
       };
   }
 },
+};
+var datesDisabledFn = function datesDisabled(date, viewId, rangeEnd) {
+  const currentDate = new Date();
+
+  // Disable entire last year
+  const year = date.getFullYear();
+  const thisYear = currentDate.getFullYear();
+  if (viewId < 3 && year === thisYear - 1) {
+    return true;
+  }
+
+  // Disable the month after next month of each year before next year
+  const month = date.getMonth();
+  const thisMonth = currentDate.getMonth();
+  if (
+    viewId < 2
+    && year < thisYear + 1 && month == (thisMonth + 2) % 12
+  ) {
+    return true;
+  }
+
+  // Disable every year's 1st of January and 4th of May
+  const dayOfMonth = date.getDate();
+  if (
+    viewId == 0 && month == 0 && dayOfMonth == 1
+    || month == 4 && dayOfMonth == 4
+  ) {
+    return true;
+  }
+
+  // In this month, disable all Saturdays if the picker is the end side
+  // of date range picker, and all Sundays if not
+  const dayOfWeek = date.getDay();
+  if (
+    viewId == 0 && year == thisYear && month == thisMonth
+    && (!rangeEnd && dayOfWeek == 0 || rangeEnd && dayOfWeek == 6)
+  ) {
+    return true;
+  }
+
+  return false;
 };
 var buttonClass;
 
@@ -75,13 +111,13 @@ const defaultOptions = {
   beforeShowDecade: null,
   beforeShowMonth: null,
   beforeShowYear: null,
-  calendarWeeks: false,
-  clearBtn: false,
+  clearButton: false,
   dateDelimiter: ',',
   datesDisabled: [],
   daysOfWeekDisabled: [],
   daysOfWeekHighlighted: [],
   defaultViewDate: today,
+  enableOnReadonly: true,
   format: 'mm/dd/yyyy',
   language: 'en',
   maxDate: null,
@@ -97,9 +133,11 @@ const defaultOptions = {
   showOnFocus: true,
   startView: 0,
   title: '',
-  todayBtn: false,
+  todayButton: false,
+  todayButtonMode: 0,
   todayHighlight: false,
   updateOnBlur: true,
+  weekNumbers: 0,
   weekStart: 0,
 };
 const languages = {
@@ -188,6 +226,8 @@ const range = document.createRange();
 const sandbox = document.getElementById('sandbox');
 const options = document.getElementById('options');
 const jsonFields = ['datesDisabled'];
+const elemAttribSettings = document.querySelectorAll('#elem-attribs input');
+let elems;
 
 function parseHTML(html) {
   return range.createContextualFragment(html);
@@ -211,9 +251,14 @@ function switchPicker(type) {
     }, options);
 
     window.demoPicker.destroy();
-    sandbox.removeChild(sandbox.firstChild);
+    sandbox.replaceChild(elems[type], sandbox.firstElementChild);
   }
-  sandbox.appendChild(parseHTML(templates[type]));
+
+  const target = type === 'inline' ? '.date' : 'input';
+  elemAttribSettings.forEach((el) => {
+    el.parentElement.style.display = el.dataset.target === target ? '' : 'none';
+    onChangeElemAttribSetting({target: el});
+  });
 
   const el = sandbox.querySelector('.date');
   window.demoPicker = type === 'range'
@@ -270,6 +315,9 @@ const refreshOptionForm = function refreshOptionForm() {
         el.value = formatDate(val);
         break;
       case 'datesDisabled':
+        if (!val) {
+          break;
+        }
         el = formElemByName(key);
         if (val.length === 0) {
           if (!el.value || el.value === '[]') {
@@ -399,7 +447,22 @@ function onChnageDirection(ev) {
 }
 
 function onChangeInputOption(ev) {
-  updateOption(ev.target.name, ev.target.value);
+  let {name, value} = ev.target;
+  if (name === 'datesDisabledFn') {
+    name = 'datesDisabled';
+    const [arrElem, fnElem] = ['arr', 'fn']
+      .map(suffix => document.getElementById(`${name}-${suffix}`));
+    if (!value) {
+      fnElem.classList.add('is-hidden');
+      arrElem.classList.remove('is-hidden');
+      onChangeTextareaOption({target: arrElem.querySelector('textarea')});
+      return;
+    }
+    arrElem.classList.add('is-hidden');
+    fnElem.classList.remove('is-hidden');
+    value = datesDisabledFn;
+  }
+  updateOption(name, value);
 }
 
 function onChangeTextareaOption(ev) {
@@ -442,7 +505,25 @@ function onClickCheckboxOptions(ev) {
   updateOption(checkbox.name, value);
 }
 
+function onChangeElemAttribSetting(ev) {
+  const {checked, dataset, name, value} = ev.target;
+  sandbox.querySelectorAll(dataset.target).forEach((el) => {
+    if (checked) {
+      el.setAttribute(name, value);
+    } else {
+      el.removeAttribute(name);
+    }
+  });
+}
+
 function initialize() {
+  // prepare sandbox content
+  elems = Object.entries(templates).reduce((obj, [key, template]) => {
+    obj[key] = parseHTML(template).firstChild;
+    return obj;
+  }, {});
+  elems.input = sandbox.firstElementChild;
+
   // load languages
   const selectElem = options.querySelector('select[name=language]');
   Object.keys(languages).forEach((lang) => {
@@ -450,12 +531,14 @@ function initialize() {
     selectElem.appendChild(parseHTML(`<option value="${lang}">${lang} – ${languages[lang]}</option>`));
   });
 
-  document.querySelector('.toggle-btn').addEventListener('click', () => {
+  document.querySelector('.toggle-button').addEventListener('click', () => {
     document.body.classList.toggle('open');
   });
 
   document.querySelectorAll('.code-wrap pre').forEach((el) => {
-    el.textContent = getBeforeShowFnSrc(el.id.replace('code-', ''));
+    el.firstElementChild.textContent = el.id == 'code-datesDisabled'
+      ? datesDisabledFn.toString()
+      : getBeforeShowFnSrc(el.id.replace('code-', ''));
   });
 
   // collapsibles
@@ -464,6 +547,12 @@ function initialize() {
       const target = document.getElementById(el.dataset.target);
       el.classList.toggle('is-active');
       target.classList.toggle('is-active');
+      target.scrollTo(0, 0);
     });
+  });
+
+  // Elem attribute settings
+  elemAttribSettings.forEach((el) => {
+    el.addEventListener('change', onChangeElemAttribSetting);
   });
 }
